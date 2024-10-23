@@ -2,14 +2,11 @@ import os
 import ctypes
 import importlib.util
 import json
-import sys
 import threading
-import time
 import subprocess
-import multiprocessing
 import pyautogui
 import logging
-from PIL import Image, ImageColor
+from PIL import Image
 from threading import Thread
 from pynput.mouse import Button, Controller 
 from pynput.keyboard import Listener, KeyCode, Key, GlobalHotKeys

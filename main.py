@@ -1,14 +1,14 @@
-# Copyright (C) 2022 The Qt Company Ltd.
-# SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-from __future__ import annotations
-
-"""PySide6 port of the widgets/gallery example from Qt v5.15"""
-
+import os
 import sys
 import logging
 from logging.config import dictConfig
 from PySide6.QtWidgets import QApplication
 from app import Clicker
+
+if not os.path.exists('./cache/'):
+    os.makedirs("./cache/")
+if not os.path.exists('./images/'):
+    os.makedirs("./images/")
 
 dictConfig(
     {

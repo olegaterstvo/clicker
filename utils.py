@@ -20,14 +20,15 @@ except ImportError:
 logger = logging.getLogger("root")
 
 def log(message: str):
+    """write message into logs"""
     logger.info(f"{message}")
 
-def sleep(milliseconds):
+def sleep(milliseconds: int):
     """Delay execution for a given time in *milliseconds*"""
     _timeout = milliseconds/1000
     time.sleep(_timeout)
 
-def wait(milliseconds):
+def wait(milliseconds: int):
     """Alias for sleep()"""
     sleep(milliseconds)
 
@@ -289,4 +290,16 @@ def locateAllOnScreen(image: str, grayscale: bool = True,
         for i in range(len(a)):
             a[i] = tuple(a[i])
     return a
+
+def get_functions() -> list[dict[str, str]]:
+    func: list[callable] = [log, sleep, wait, holdKey, releaseKey, pressKey, getPixel, isMatchesColor, leftClick, rightClick, middleClick, moveTo, moveRel, dragTo, dragRel, scroll, write, screenshot, locateOnImage, locateAllOnImage, locateOnScreen, locateAllOnScreen, locateOnWindow]
+    l = []
+    print(moveRel.__annotations__)
+    for f in func:
+        l.append(
+            {
+                f.__name__ : f.__doc__,
+            }
+        )
+    return l
 

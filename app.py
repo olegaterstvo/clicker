@@ -4,31 +4,20 @@ import importlib.util
 import json
 import threading
 import subprocess
+import time
 import pyautogui
 import logging
 from PIL import Image
 from threading import Thread
-from pynput.mouse import Button, Controller 
-from pynput.keyboard import Listener, KeyCode, Key, GlobalHotKeys
-from pynput.keyboard import Controller as Kb
+from pynput.mouse import Controller 
+from pynput.keyboard import GlobalHotKeys
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
-from PySide6.QtCore import (QDateTime, QDir, QLibraryInfo, QSysInfo, Qt,
-                            QTimer, Slot, qVersion, QThread, Signal, QSize)
-from PySide6.QtGui import (QCursor, QDesktopServices, QGuiApplication, QIcon,
-                           QKeySequence, QShortcut, QStandardItem, QTextCharFormat, QTextCursor,
-                           QStandardItemModel, QPixmap, QColor, QImage, QScreen)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox,
-                               QCommandLinkButton, QDateTimeEdit, QDial,
-                               QDialog, QDialogButtonBox, QFileSystemModel,
-                               QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-                               QLineEdit, QListView, QMenu, QPlainTextEdit,
-                               QProgressBar, QPushButton, QRadioButton,
-                               QScrollBar, QSizePolicy, QSlider, QSpinBox,
-                               QStyleFactory, QTableWidget, QTabWidget,
-                               QTextBrowser, QTextEdit, QToolBox, QToolButton,
-                               QTreeView, QVBoxLayout, QWidget)
+from PySide6.QtCore import (Qt, Slot)
+from PySide6.QtGui import (QIcon, QTextCursor, QColor, QImage)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QLabel, QPushButton,
+                               QSpinBox, QStyleFactory, QTextBrowser, QTextEdit, QVBoxLayout, QWidget, QDialog)
 
 functions = ['log','sleep','wait','holdKey','releaseKey','pressKey','getPixel',
              'isMatchesColor','leftClick','rightClick','middleClick','moveTo',
@@ -58,7 +47,7 @@ def style_names():
     return result
 
 
-class Clicker(QDialog):
+class Clicker(QWidget):
     def __init__(self):
         super().__init__()
         if not os.path.exists('./cache/pixel.png'):
@@ -74,6 +63,7 @@ class Clicker(QDialog):
                 _pixel = _cache['pixel']
                 _interval = _cache['interval']
                 _iterate = _cache['iterate']
+                _window_properties = _cache['window_properties']                
         except:
             with open('./cache/cache.json', 'w+') as f:
                 _theme = style_names()[0]
@@ -82,28 +72,31 @@ class Clicker(QDialog):
                 _pixel = [255, 255, 255]
                 _interval = 1000
                 _iterate = True
+                _window_properties = [0, 0, 400, 300]
                 _cache = {
                     "theme" : _theme,
                     "style" : _style,
                     "coords" : _coords,
                     "pixel" : _pixel,
                     "interval" : _interval,
-                    "iterate" : _iterate
+                    "iterate" : _iterate,
+                    "window_properties": _window_properties
                 }
                 _cache = json.dumps(_cache)
                 f.write(_cache)
 
         self.setWindowIcon(QIcon('./icon.png'))
         self.setWindowTitle(f"Chronos Project Advanced Klicker™️ Application (CPAKA)")
-        self._style_combobox = QComboBox()
-        init_widget(self._style_combobox, "theme_combobox")
-        self._style_combobox.addItems(style_names())
-        self._style_combobox.textActivated.connect(self.change_style)
-        self._style_combobox.setCurrentText(_theme)
-        self._style_combobox.textActivated.emit(_theme)
+        self.setGeometry(_window_properties[0], _window_properties[1], _window_properties[2], _window_properties[3])
+        self.style_combobox = QComboBox()
+        init_widget(self.style_combobox, "theme_combobox")
+        self.style_combobox.addItems(style_names())
+        self.style_combobox.textActivated.connect(self.change_style)
+        self.style_combobox.setCurrentText(_theme)
+        self.style_combobox.textActivated.emit(_theme)
         theme_label = QLabel("Theme:")
         init_widget(theme_label, "theme_label")
-        theme_label.setBuddy(self._style_combobox)
+        theme_label.setBuddy(self.style_combobox)
 
 
         self.code_style = QComboBox()
@@ -116,7 +109,7 @@ class Clicker(QDialog):
 
         style_label = QLabel("Style:")
         style_label.setBuddy(self.code_style)
-        self.code_style.textActivated.connect(self.on_style_changed)
+        self.code_style.textActivated.connect(self.on_text_changed)
         
 
         self.coordinates = QPushButton(f"({_coords[0]}, {_coords[1]})")
@@ -147,19 +140,29 @@ class Clicker(QDialog):
         self.delay_spin.setMaximum(999999)
         self.delay_spin.setValue(_interval)
         self.delay_spin.setFixedWidth(90)
-        self.delay_spin.editingFinished.connect(self.on_delay_edit)
 
         self.iterate_checkbox = QCheckBox('Iterate')
         init_widget(self.iterate_checkbox, "iterate_checkbox", "If unchecked script runs only once")
         self.iterate_checkbox.setChecked(_iterate)
-        self.iterate_checkbox.checkStateChanged.connect(self.on_iterate_edit)
+
+        self.logs_button = QPushButton("Logs")
+        init_widget(self.logs_button, "logs_button", "Show logs")
+        self.logs_button.pressed.connect(self.show_logs)
+        self.logs_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.logs_window = None
+
+        self.cheatsheet_button = QPushButton("Cheatsheet")
+        init_widget(self.cheatsheet_button, "cheatsheet_button", "Show cheatsheet")
+        self.cheatsheet_button.pressed.connect(self.show_cheatsheet)
+        self.cheatsheet_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.cheatsheet_window = None
         
         top_layout = QHBoxLayout()
         top_layout.addWidget(theme_label)
-        top_layout.addWidget(self._style_combobox)
+        top_layout.addWidget(self.style_combobox)
         top_layout.addWidget(style_label)
         top_layout.addWidget(self.code_style)
-
+        top_layout.addWidget(self.logs_button)
         top_layout.addStretch(1)
 
         second_layout = QHBoxLayout()
@@ -167,6 +170,7 @@ class Clicker(QDialog):
         second_layout.addWidget(self.coordinates)
         second_layout.addWidget(pixel_label)
         second_layout.addWidget(self.pixel)
+        second_layout.addWidget(self.cheatsheet_button)
         second_layout.addStretch(1)
 
         third_layout = QHBoxLayout()
@@ -182,19 +186,14 @@ class Clicker(QDialog):
             _text.pop(0)
             _text.pop(0)
             for i in range(14):
-                _text.pop()
-
-            
+                _text.pop()            
             for i in range(len(_text)):
                 _text[i] = _text[i][4:]
             _code = self.format_python_code_to_html('\n'.join(_text))
-            # self.code.setText(_code)
 
         self.code = QTextEdit(_code)
-        # print(_code)
         init_widget(self.code, "code_text")
         self.code.setTabStopDistance(28.0)
-        # self.code.setFontFamily('Consolas')
         self.code.setFont("Consolas, 'Courier New', monospace")
         self.code.textChanged.connect(self.on_text_changed)
 
@@ -209,31 +208,17 @@ class Clicker(QDialog):
         main_layout.addLayout(top_layout, 0, 0, 1, 2)
         main_layout.addLayout(second_layout, 1, 0, 1, 2)
         main_layout.addWidget(self.code, 2, 0, 1, 2)
-        # main_layout.addWidget(spin_box, 3, 0, 1, 2)
         main_layout.addLayout(third_layout, 3, 0, 1, 2)
         main_layout.addWidget(self.run_button, 4, 0, 1, 2)
-
-        # bottom_layout = QVBoxLayout()
-        # bottom_layout.addStretch()
-        # main_layout.addLayout(bottom_layout , 10, 0, 1, 2)
-
-        # self.tt = StoppableThread(target=self.update_coordinates)
-        # self.tt.start()
-        # self.update_coordinates()
-        # self.listener = Listener(on_press=self.on_press)
-        # self.listener.start()
 
         h = GlobalHotKeys({
                 '<ctrl>+a': self.on_activate_a,
                 '<ctrl>+q': self.on_activate_q})
         h.start()
         
-        spec = importlib.util.spec_from_file_location('./script.py', './script.py')
-        foo = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(foo)
-        self.t = StoppableThread(foo.f)
-        # self.t = Thread(target=foo.f, args=[self.flag])
-        # self.t = multiprocessing.Process(target=foo.f, args=())
+        self.t = None
+        self.logs_thread = None
+
 
     def on_activate_a(self):
         _coords = Controller().position
@@ -247,85 +232,62 @@ class Clicker(QDialog):
 
         self.pixel.setText(f"{_pix}") 
         self.pixel.setIcon(QIcon('./cache/pixel.png'))
-
-        with open('./cache/cache.json', 'r') as f:
-            js: dict = json.loads(f.read())
-            js.update({"coords":[_coords[0], _coords[1]]})
-            js.update({"pixel":[_pix[0], _pix[1], _pix[2]]})
-            js = json.dumps(js)
-        with open('./cache/cache.json', 'w+') as f:
-            f.write(js)
         
 
     def on_activate_q(self):
-        # self.run_button.setChecked(not self.run_button.isChecked())
         self.run_button.click()
+
     
     @Slot(str)
     def change_style(self, style_name):
         QApplication.setStyle(QStyleFactory.create(style_name))
-        with open('./cache/cache.json', 'r') as f:
-            js: dict = json.loads(f.read())
-            js.update({"theme": style_name})
-            js = json.dumps(js)
-        with open('./cache/cache.json', 'w+') as f:
-            f.write(js)
+
 
     @Slot(str)
-    def reject(self):
-        self.t.stop()
+    def closeEvent(self, close_event):
+        if self.t is not None: self.t.stop()
+        if self.logs_thread is not None: self.logs_thread.stop()        
+        self.save_code()
+        with open('./cache/cache.json', 'r') as f:
+            js: dict = json.loads(f.read())
+            _g = self.geometry()
+            _c = self.coordinates.text()[1:-1].split(', ')
+            _p = self.pixel.text()[1:-1].split(', ')
+            js.update({
+                "theme": self.style_combobox.currentText(),
+                "style": self.code_style.currentText(),
+                "coords": [int(_c[0]), int(_c[1])],
+                "pixel": [int(_p[0]), int(_p[1]), int(_p[2])],
+                "interval": int(self.delay_spin.text()),
+                "iterate": self.iterate_checkbox.isChecked(),
+                "window_properties":[_g.x(), _g.y(), _g.width(), _g.height()]
+                })
+            js = json.dumps(js)
+        with open('./cache/cache.json', 'w+') as f:
+            f.write(js)
         QApplication.quit()
 
-    # def on_press(self, key: Key):
-    #     # print(key)
-    #     # print(Kb().modifiers)
-    #     # print(KeyCode.from_dead(Key.ctrl_l).join(Key.end))
-    #     if key == KeyCode(char='\x01'): # ctrl+a
-
-        
-    def on_delay_edit(self):
-        with open('./cache/cache.json', 'r') as f:
-            js: dict = json.loads(f.read())
-            js.update({"interval": self.delay_spin.value()})
-            js = json.dumps(js)
-        with open('./cache/cache.json', 'w+') as f:
-            f.write(js)
-
-    def on_iterate_edit(self):
-        with open('./cache/cache.json', 'r') as f:
-            js: dict = json.loads(f.read())
-            js.update({"iterate": self.iterate_checkbox.isChecked()})
-            js = json.dumps(js)
-        with open('./cache/cache.json', 'w+') as f:
-            f.write(js)
     
     @Slot(str)
     def press_coodinates(self):
         subprocess.run("clip", text=True, input=self.coordinates.text()[1:-1])
         self.code.insertPlainText(self.coordinates.text()[1:-1])
 
+
     @Slot(str)
     def press_pixel(self):
         subprocess.run("clip", text=True, input=self.pixel.text())
         self.code.insertPlainText(self.pixel.text())
 
-    @Slot(str)
-    def run(self):
-        print('run')
-        if self.run_button.text() == 'Stop':
-            self.t.stop()
-            self.run_button.setText('Run')
 
-        else:
-            self.run_button.setText('Stop')
-            c = self.code.toPlainText().replace('	', '    ')
-            self.code.setText(c)
-            c = c.split('\n')
-            for i in range(len(c)):
-                c[i] = f"    {c[i]}"
-            c.insert(0, 'from utils import *\n\ndef main():')
-            c.append(
-                """
+    def save_code(self):
+        c = self.code.toPlainText().replace('	', '    ')
+        self.code.setText(c)
+        c = c.split('\n')
+        for i in range(len(c)):
+            c[i] = f"    {c[i]}"
+        c.insert(0, 'from utils import *\n\ndef main():')
+        c.append("""
 def f(timeout: int, iterate: bool):
     if iterate:
         while True:
@@ -340,8 +302,18 @@ def f(timeout: int, iterate: bool):
         except Exception as e:
             logger.error(f"{e}")""")
 
-            with open('./script.py', mode='w') as file:
-                file.write('\n'.join(c))
+        with open('./script.py', mode='w') as file:
+            file.write('\n'.join(c))
+
+
+    @Slot(str)
+    def run(self):
+        if self.run_button.text() == 'Stop':
+            if self.t is not None: self.t.stop()
+            self.run_button.setText('Run')
+        else:
+            self.run_button.setText('Stop')
+            self.save_code()
 
             spec = importlib.util.spec_from_file_location('./script.py', './script.py')
             foo = importlib.util.module_from_spec(spec)
@@ -351,38 +323,115 @@ def f(timeout: int, iterate: bool):
     
 
     def format_python_code_to_html(self, code: str) -> str:
-        # Создаем объект лексера для Python
         lexer = get_lexer_by_name('python')
-        # Создаем объект форматтера для HTML    
-        # print(list(styles.get_all_styles()))
         formatter = HtmlFormatter(full=False, noclasses=True, nobackground=True, style=self.code_style.currentText())
-        # Подсвечиваем код
         highlighted_code: str = highlight(code, lexer, formatter)
         for _f in functions:
             if _f in highlighted_code:
                 highlighted_code = highlighted_code.replace(f'{_f}(', f'<span style="color:#dccd79">{_f}</span>(')
         return highlighted_code
 
-    def on_style_changed(self):
-        with open('./cache/cache.json', 'r') as f:
-            js: dict = json.loads(f.read())
-            js.update({"style" : self.code_style.currentText()})
-            js = json.dumps(js)
-        with open('./cache/cache.json', 'w+') as f:
-            f.write(js)
 
-        self.on_text_changed()
-
+    @Slot(str)
     def on_text_changed(self):
         self.code.textChanged.disconnect()
         pos = self.code.textCursor().position()
         text = self.format_python_code_to_html(self.code.toPlainText())
         self.code.setText(text)
+
+        text = self.code.toPlainText()
+
         cursor = self.code.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.MoveAnchor, n=pos)
+        
+        if text[pos-1:pos] == '\n':
+            count = 0
+            for space in (l:=text[:pos-1].split('\n')[-1]):
+                if space != ' ':
+                    break
+                count += 1
+            if any(kw in l for kw in ['break', 'continue', 'return', 'raise']):
+                count -= 4
+            indent = ''
+            for _ in range(count):
+                indent += ' '
+            if text[pos-2:pos] == ':\n':
+                indent +='    '
+            cursor.insertText(indent)   # TODO figure out how to handle deletions
+
         self.code.setTextCursor(cursor)
         self.code.textChanged.connect(self.on_text_changed)
-        
+
+    @Slot()
+    def show_logs(self):
+        class LogsWindow(QWidget):
+            def __init__(self_logs):
+                super().__init__()
+                self_logs.setWindowIcon(QIcon('./icon.png'))
+                self_logs.setWindowTitle('CPAKA logs')
+                layout = QVBoxLayout()
+                self_logs.text = QTextBrowser()
+                self_logs.text.backwardAvailable.connect(self_logs.do_update)
+                layout.addWidget(self_logs.text)                
+                self_logs.setLayout(layout)
+
+                self.logs_thread = StoppableThread(self_logs.update_logs)
+                self.logs_thread.start()
+
+            def do_update(self_logs):
+                with open('./cache/log.log', 'r') as f:
+                    _l = f.read().split('\n')
+                    _l.reverse()
+                    _l = '<br>'.join(_l)
+                    _l = _l.replace('[', '<span style="color:#ababab">[')\
+                        .replace(']', ']</span>').replace('INFO', '<span style="color:#6374ce">INFO</span>')\
+                        .replace('WARNING', '<span style="color:#f6ba6f">WARNING</span>').replace('ERROR', '<span style="color:#d34748">ERROR</span>')
+                    _pos = self_logs.text.verticalScrollBar().value()
+                    self_logs.text.setText(_l)
+                    self_logs.text.verticalScrollBar().setValue(_pos)
+
+            def update_logs(self_logs):
+                while True:
+                    self_logs.text.backwardAvailable.emit(False)
+                    time.sleep(1)
+            
+            def closeEvent(self_logs, close_event):
+                self.logs_thread.stop()
+                self_logs.close()   
+
+
+        if self.logs_window is None or not self.logs_window.isVisible():
+            self.logs_window = LogsWindow()
+            self.logs_window.show()
+        else:
+            if self.logs_thread is not None: self.logs_thread.stop()
+            self.logs_window.close()
+            self.logs_window = None
+
+    @Slot()
+    def show_cheatsheet(self):
+        class CheatsheetWindow(QWidget):
+            def __init__(self_cheat):
+                super().__init__()
+                self_cheat.setWindowIcon(QIcon('./icon.png'))
+                self_cheat.setWindowTitle('CPAKA cheatsheet')
+                self_cheat.setGeometry(self.geometry().x(), self.geometry().y(), 800, 600)
+                layout = QVBoxLayout()
+                self_cheat.text = QTextBrowser()
+
+                from common import description
+                self_cheat.text.setText(description.replace('\n', '<br>'))
+
+                layout.addWidget(self_cheat.text)                
+                self_cheat.setLayout(layout)
+            
+        if self.cheatsheet_window is None or not self.cheatsheet_window.isVisible():
+            self.cheatsheet_window = CheatsheetWindow()
+            self.cheatsheet_window.show()
+        else:
+            self.cheatsheet_window.close()
+            self.cheatsheet_window = None
+
 
 class StoppableThread(Thread):
     def __init__(self, target: callable, *args):
@@ -402,7 +451,6 @@ class StoppableThread(Thread):
                 return id
  
     def stop(self):
-        print("stop")
         thread_id = self.get_id()
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
               ctypes.py_object(SystemExit))

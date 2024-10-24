@@ -5,7 +5,7 @@ def main():
     cpaka.activate()
     leftClick(cpaka.left+360, cpaka.top+80)
     
-    return "Hello world"    # any not None return will stop main loop                                            
+    return "Hello world"    # any not None return will stop main loop
 
 def f(timeout: int, iterate: bool):
     if iterate:

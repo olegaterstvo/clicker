@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import IntEnum
 
-class Key(Enum):
+class Key(IntEnum):
     LBM = 0x01
     RBM = 0x02
     MBM = 0x04

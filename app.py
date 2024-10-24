@@ -16,6 +16,7 @@ from pygments import highlight
 # from pygments.formatters import HtmlFormatter     # Doesn't work after build for some reason. Maybe i should try use venv, but... whatever
 from formatters_html import HtmlFormatter
 from lexers_python import PythonLexer
+from common import description, color_f
 from PySide6.QtCore import (Qt, Slot)
 from PySide6.QtGui import (QIcon, QTextCursor, QColor, QImage)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QLabel, QPushButton,
@@ -335,7 +336,7 @@ def f(timeout: int, iterate: bool):
         highlighted_code: str = highlight(code, lexer, formatter)
         for _f in functions:
             if _f in highlighted_code:
-                highlighted_code = highlighted_code.replace(f'{_f}(', f'<span style="color:#dccd79">{_f}</span>(')
+                highlighted_code = highlighted_code.replace(f'{_f}(', f'<span style="color:{color_f}">{_f}</span>(')
         return highlighted_code
 
 
@@ -426,7 +427,6 @@ def f(timeout: int, iterate: bool):
                 layout = QVBoxLayout()
                 self_cheat.text = QTextBrowser()
 
-                from common import description
                 self_cheat.text.setText(description.replace('\n', '<br>'))
 
                 layout.addWidget(self_cheat.text)                

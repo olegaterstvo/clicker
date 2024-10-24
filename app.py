@@ -12,8 +12,10 @@ from threading import Thread
 from pynput.mouse import Controller 
 from pynput.keyboard import GlobalHotKeys
 from pygments import highlight
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters import HtmlFormatter
+# from pygments.lexers import get_lexer_by_name
+# from pygments.formatters import HtmlFormatter     # Doesn't work after build for some reason. Maybe i should try use venv, but... whatever
+from formatters_html import HtmlFormatter
+from lexers_python import PythonLexer
 from PySide6.QtCore import (Qt, Slot)
 from PySide6.QtGui import (QIcon, QTextCursor, QColor, QImage)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QLabel, QPushButton,
@@ -85,7 +87,7 @@ class Clicker(QWidget):
                 _cache = json.dumps(_cache)
                 f.write(_cache)
 
-        self.setWindowIcon(QIcon('./icon.png'))
+        self.setWindowIcon(QIcon('./icon.ico'))
         self.setWindowTitle(f"Chronos Project Advanced Klicker™️ Application (CPAKA)")
         self.setGeometry(_window_properties[0], _window_properties[1], _window_properties[2], _window_properties[3])
         self.style_combobox = QComboBox()
@@ -185,7 +187,7 @@ class Clicker(QWidget):
             _text.pop(0)
             _text.pop(0)
             _text.pop(0)
-            for i in range(14):
+            for i in range(18):
                 _text.pop()            
             for i in range(len(_text)):
                 _text[i] = _text[i][4:]
@@ -292,13 +294,17 @@ def f(timeout: int, iterate: bool):
     if iterate:
         while True:
             try:
-                main()
+                m = main()
+                if m is not None: 
+                    logger.warning(f"{m}")
+                    return
                 sleep(timeout)
             except Exception as e:
                 logger.error(f'{e}')
     else:
         try:
-            main()
+            m = main()
+            if m is not None: logger.warning(f"{m}")
         except Exception as e:
             logger.error(f"{e}")""")
 
@@ -323,7 +329,8 @@ def f(timeout: int, iterate: bool):
     
 
     def format_python_code_to_html(self, code: str) -> str:
-        lexer = get_lexer_by_name('python')
+        # lexer = get_lexer_by_name('python')
+        lexer = PythonLexer()
         formatter = HtmlFormatter(full=False, noclasses=True, nobackground=True, style=self.code_style.currentText())
         highlighted_code: str = highlight(code, lexer, formatter)
         for _f in functions:
@@ -367,7 +374,7 @@ def f(timeout: int, iterate: bool):
         class LogsWindow(QWidget):
             def __init__(self_logs):
                 super().__init__()
-                self_logs.setWindowIcon(QIcon('./icon.png'))
+                self_logs.setWindowIcon(QIcon('./icon.ico'))
                 self_logs.setWindowTitle('CPAKA logs')
                 layout = QVBoxLayout()
                 self_logs.text = QTextBrowser()
@@ -413,7 +420,7 @@ def f(timeout: int, iterate: bool):
         class CheatsheetWindow(QWidget):
             def __init__(self_cheat):
                 super().__init__()
-                self_cheat.setWindowIcon(QIcon('./icon.png'))
+                self_cheat.setWindowIcon(QIcon('./icon.ico'))
                 self_cheat.setWindowTitle('CPAKA cheatsheet')
                 self_cheat.setGeometry(self.geometry().x(), self.geometry().y(), 800, 600)
                 layout = QVBoxLayout()

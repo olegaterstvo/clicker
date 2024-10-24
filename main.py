@@ -4,11 +4,16 @@ import logging
 from logging.config import dictConfig
 from PySide6.QtWidgets import QApplication
 from app import Clicker
+from common import example
 
 if not os.path.exists('./cache/'):
     os.makedirs("./cache/")
 if not os.path.exists('./images/'):
     os.makedirs("./images/")
+if not os.path.exists('./script.py'):
+    with open('script.py', 'w+') as f:
+        f.write(example)
+
 
 dictConfig(
     {

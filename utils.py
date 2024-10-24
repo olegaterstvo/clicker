@@ -6,7 +6,6 @@ import pynput.mouse as ms
 import ctypes
 import logging
 from typing import Literal
-from ctypes import wintypes
 from keys import Key
 from common import *
 

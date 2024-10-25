@@ -1,6 +1,9 @@
 import time
 import pyautogui
+import os
+import pyperclip
 import pygetwindow
+import pynput
 import pynput.keyboard as kb
 import pynput.mouse as ms
 import ctypes
@@ -44,10 +47,10 @@ def releaseKey(hex_key_code: Key|int):
                             dwFlags=KEYEVENTF_KEYUP))
     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
-def pressKey(hex_key_code: Key|int, interval: int = 10):
+def pressKey(hex_key_code: Key|int, interval: int = 20):
     """Performs push and then release actions
     
-    `interval` : The amount of time to wait between push and release actions in *milliseconds*. Defafults to `10`ms"""
+    `interval` : The amount of time to wait between push and release actions in *milliseconds*. Defafults to `20`ms"""
     holdKey(hex_key_code)
     time.sleep(interval/1000)
     releaseKey(hex_key_code)
@@ -141,8 +144,8 @@ def screenshot(image_file_name: str = 'screenshot.png', region: tuple[int,int,in
 def locateOnImage(what_to_find: str, where_to_find: str, grayscale: bool = True, region: tuple[int, int, int, int]|None = None, confidence: float = 0.999, return_center: bool = True):
     """Locates one image on the other image.
     
-    `what_to_find` : Path to image to find.
-    `where_to_find` : Path to image where to find first image.
+    `what_to_find` : Filename of image to find. Images should be in `images` folder.
+    `where_to_find` : Filename of image where to find first image. Images should be in `images` folder.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
     `confidence` : Between 0 and 1.
@@ -169,7 +172,7 @@ def locateOnImage(what_to_find: str, where_to_find: str, grayscale: bool = True,
 def locateOnScreen(image: str, min_search_time: int = 0, grayscale: bool = True, region: tuple[int, int, int, int]|None = None, confidence: float = 0.999, return_center: bool = True):
     """Locates image on screen
     
-    `image` : Path to image to find.
+    `image` : Filename of image to find. Images should be in `images` folder.
     `min_search_time` : Amount of time in *milliseconds* to repeat taking screenshots and trying to locate a match. The default of 0 performs a single search.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
@@ -197,7 +200,7 @@ def locateOnScreen(image: str, min_search_time: int = 0, grayscale: bool = True,
 def locateOnWindow(image: str, window_title: str, grayscale: bool = True, confidence: float = 0.999, return_center: bool = True):
     """Locates image on window
     
-    `image` : Path to image to find.
+    `image` : Filename of image to find. Images should be in `images` folder.
     `min_search_time` : Amount of time in *milliseconds* to repeat taking screenshots and trying to locate a match. The default of 0 performs a single search.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
@@ -229,8 +232,8 @@ def locateAllOnImage(what_to_find: str, where_to_find: str, grayscale: bool = Tr
                     ) -> list[tuple[int, int]] | list[tuple[int, int, int, int]] | list[tuple[None, None]] | list[tuple[None, None, None, None]]:
     """Locates one image on the other image.
     
-    `what_to_find` : Path to image to find.
-    `where_to_find` : Path to image where to find first image.
+    `what_to_find` : Filename of image to find. Images should be in `images` folder.
+    `where_to_find` : Filename of image where to find first image. Images should be in `images` folder.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
     `confidence` : Between 0 and 1.
@@ -263,7 +266,7 @@ def locateAllOnScreen(image: str, grayscale: bool = True,
                     ) -> list[tuple[int, int]] | list[tuple[int, int, int, int]] | list[tuple[None, None]] | list[tuple[None, None, None, None]]:
     """Locates image on window
     
-    `image` : Path to image to find.
+    `image` : Filename of image to find. Images should be in `images` folder.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
     `confidence` : Between 0 and 1.

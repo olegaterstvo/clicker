@@ -3,7 +3,7 @@ import ctypes
 import importlib.util
 import json
 import threading
-import subprocess
+import pyperclip
 import time
 import pyautogui
 import logging
@@ -12,13 +12,11 @@ from threading import Thread
 from pynput.mouse import Controller 
 from pynput.keyboard import GlobalHotKeys
 from pygments import highlight
-# from pygments.lexers import get_lexer_by_name
-# from pygments.formatters import HtmlFormatter     # Doesn't work after build for some reason. Maybe i should try use venv, but... whatever
-from formatters_html import HtmlFormatter
-from lexers_python import PythonLexer
-from common import description, color_f
+from pygments.lexers.python import PythonLexer
+from pygments.formatters import HtmlFormatter
+from common import description, color_f, icon
 from PySide6.QtCore import (Qt, Slot)
-from PySide6.QtGui import (QIcon, QTextCursor, QColor, QImage)
+from PySide6.QtGui import (QIcon, QTextCursor, QColor, QImage, QPixmap)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QLabel, QPushButton,
                                QSpinBox, QStyleFactory, QTextBrowser, QTextEdit, QVBoxLayout, QWidget, QDialog)
 
@@ -88,7 +86,8 @@ class Clicker(QWidget):
                 _cache = json.dumps(_cache)
                 f.write(_cache)
 
-        self.setWindowIcon(QIcon('./icon.ico'))
+        # self.setWindowIcon(QIcon('./icon.ico'))
+        self.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
         self.setWindowTitle(f"Chronos Project Advanced Klicker™️ Application (CPAKA)")
         self.setGeometry(_window_properties[0], _window_properties[1], _window_properties[2], _window_properties[3])
         self.style_combobox = QComboBox()
@@ -226,7 +225,7 @@ class Clicker(QWidget):
     def on_activate_a(self):
         _coords = Controller().position
         self.coordinates.setText(str(_coords))
-        subprocess.run("clip", text=True, input=str(_coords)[1:-1])
+        pyperclip.copy(str(_coords)[1:-1])
 
         _pix = pyautogui.pixel(*_coords)
         a = QImage('./cache/pixel.png')
@@ -273,13 +272,13 @@ class Clicker(QWidget):
     
     @Slot(str)
     def press_coodinates(self):
-        subprocess.run("clip", text=True, input=self.coordinates.text()[1:-1])
+        pyperclip.copy(self.coordinates.text()[1:-1])
         self.code.insertPlainText(self.coordinates.text()[1:-1])
 
 
     @Slot(str)
     def press_pixel(self):
-        subprocess.run("clip", text=True, input=self.pixel.text())
+        pyperclip.copy(self.pixel.text())
         self.code.insertPlainText(self.pixel.text())
 
 
@@ -375,7 +374,7 @@ def f(timeout: int, iterate: bool):
         class LogsWindow(QWidget):
             def __init__(self_logs):
                 super().__init__()
-                self_logs.setWindowIcon(QIcon('./icon.ico'))
+                self_logs.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
                 self_logs.setWindowTitle('CPAKA logs')
                 layout = QVBoxLayout()
                 self_logs.text = QTextBrowser()
@@ -421,7 +420,7 @@ def f(timeout: int, iterate: bool):
         class CheatsheetWindow(QWidget):
             def __init__(self_cheat):
                 super().__init__()
-                self_cheat.setWindowIcon(QIcon('./icon.ico'))
+                self_cheat.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
                 self_cheat.setWindowTitle('CPAKA cheatsheet')
                 self_cheat.setGeometry(self.geometry().x(), self.geometry().y(), 800, 600)
                 layout = QVBoxLayout()

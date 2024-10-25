@@ -1,0 +1,7 @@
+pyside6==6.8.0
+pygetwindow==0.0.9
+pyautogui==0.9.54
+pynput==1.7.6
+pygments==2.14.0
+opencv-python==4.10.0.84
+pyperclip==1.9.0

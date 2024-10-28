@@ -14,9 +14,9 @@ from pynput.keyboard import GlobalHotKeys
 from pygments import highlight
 from pygments.lexers.python import PythonLexer
 from pygments.formatters import HtmlFormatter
-from common import description, color_f, icon
+from common import description, color_f
 from PySide6.QtCore import (Qt, Slot)
-from PySide6.QtGui import (QIcon, QTextCursor, QColor, QImage, QPixmap)
+from PySide6.QtGui import (QIcon, QTextCursor, QColor, QImage, QPixmap, QPainter, QTransform, QBrush)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QLabel, QPushButton,
                                QSpinBox, QStyleFactory, QTextBrowser, QTextEdit, QVBoxLayout, QWidget, QDialog)
 
@@ -86,8 +86,32 @@ class Clicker(QWidget):
                 _cache = json.dumps(_cache)
                 f.write(_cache)
 
+        # Define the QPixmap (24x24 pixels)
+        self.icon_pixmap = QPixmap(24, 24)
+        self.icon_pixmap.fill(QColor(0, 0, 0, 0))  # Fill with a transparent background
+        # Start painting on the QPixmap
+        _painter = QPainter(self.icon_pixmap)
+        _painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        # Transformation for rotation
+        _transform = QTransform()
+        _transform.translate(8,8)
+        _transform.rotate(45)  # Rotate by 45 degrees
+        # Draw the bottom white rectangle
+        _painter.setBrush(QBrush(QColor("white")))
+        _painter.setPen(Qt.PenStyle.NoPen)  # Remove border
+        _painter.setTransform(_transform, True)  # Apply the transformation
+        # Draw white rectangle with offset 
+        rect_size = 12  # Size of the rectangles
+        _painter.drawRoundedRect(-rect_size // 2 + 6, -rect_size // 2 + 6, rect_size, rect_size, 3, 3)
+        # Draw the top rectangle
+        _painter.setBrush(QBrush(QColor("#6374ce")))
+        _painter.drawRoundedRect(-rect_size // 2, -rect_size // 2, rect_size, rect_size, 3, 3)
+        # Finish painting
+        _painter.end()        
+        
         # self.setWindowIcon(QIcon('./icon.ico'))
-        self.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
+        # self.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
+        self.setWindowIcon(self.icon_pixmap)
         self.setWindowTitle(f"Chronos Project Advanced Klicker™️ Application (CPAKA)")
         self.setGeometry(_window_properties[0], _window_properties[1], _window_properties[2], _window_properties[3])
         self.style_combobox = QComboBox()
@@ -374,7 +398,8 @@ def f(timeout: int, iterate: bool):
         class LogsWindow(QWidget):
             def __init__(self_logs):
                 super().__init__()
-                self_logs.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
+                # self_logs.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
+                self_logs.setWindowIcon(self.icon_pixmap)
                 self_logs.setWindowTitle('CPAKA logs')
                 layout = QVBoxLayout()
                 self_logs.text = QTextBrowser()
@@ -420,7 +445,8 @@ def f(timeout: int, iterate: bool):
         class CheatsheetWindow(QWidget):
             def __init__(self_cheat):
                 super().__init__()
-                self_cheat.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
+                # self_cheat.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
+                self_cheat.setWindowIcon(self.icon_pixmap)
                 self_cheat.setWindowTitle('CPAKA cheatsheet')
                 self_cheat.setGeometry(self.geometry().x(), self.geometry().y(), 800, 600)
                 layout = QVBoxLayout()

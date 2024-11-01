@@ -1,3 +1,4 @@
+import glob
 import os
 import ctypes
 import importlib.util
@@ -18,7 +19,7 @@ from common import description, color_f
 from PySide6.QtCore import (Qt, Slot)
 from PySide6.QtGui import (QIcon, QTextCursor, QColor, QImage, QPixmap, QPainter, QTransform, QBrush)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QLabel, QPushButton,
-                               QSpinBox, QStyleFactory, QTextBrowser, QTextEdit, QVBoxLayout, QWidget, QDialog)
+                               QSpinBox, QStyleFactory, QTextBrowser, QTextEdit, QVBoxLayout, QWidget, QDialog, QTabWidget, QSizePolicy)
 
 functions = ['log','sleep','wait','holdKey','releaseKey','pressKey','getPixel',
              'isMatchesColor','leftClick','rightClick','middleClick','moveTo',
@@ -48,42 +49,40 @@ def style_names():
     return result
 
 
+def sorted_glob():
+    scripts = glob.glob('script_*.py')
+    for i in range(len(scripts) - 1):
+        for j in range(i + 1, len(scripts)):
+            if int(scripts[j].replace('script_', '')[:-3]) < int(scripts[i].replace('script_', '')[:-3]):
+                _script = scripts[j]
+                scripts[j] = scripts[i]
+                scripts[i] = _script
+    return scripts
+
 class Clicker(QWidget):
     def __init__(self):
         super().__init__()
-        if not os.path.exists('./cache/pixel.png'):
+
+        self.tabs_dict: list[dict[QTextEdit, QSpinBox, QCheckBox, QPushButton, StoppableThread|None]] = []
+
+        if not os.path.exists('./__pycache__/pixel.png'):
             _p = Image.new("RGB", (16, 16), 0xffffff)
-            _p.save('./cache/pixel.png')
+            _p.save('./__pycache__/pixel.png')
 
         try:
-            with open('./cache/cache.json', 'r') as f:
-                _cache = json.load(f)
-                _theme = _cache['theme']
-                _style = _cache['style']
-                _coords = _cache['coords']
-                _pixel = _cache['pixel']
-                _interval = _cache['interval']
-                _iterate = _cache['iterate']
-                _window_properties = _cache['window_properties']                
+            with open('./__pycache__/cache.json', 'r') as f:
+                self.cache = json.load(f)
         except:
-            with open('./cache/cache.json', 'w+') as f:
-                _theme = style_names()[0]
-                _style = "dracula"
-                _coords = [0, 0]
-                _pixel = [255, 255, 255]
-                _interval = 1000
-                _iterate = True
-                _window_properties = [0, 0, 400, 300]
-                _cache = {
-                    "theme" : _theme,
-                    "style" : _style,
-                    "coords" : _coords,
-                    "pixel" : _pixel,
-                    "interval" : _interval,
-                    "iterate" : _iterate,
-                    "window_properties": _window_properties
+            with open('./__pycache__/cache.json', 'w+') as f:
+                self.cache = {
+                    "theme" : style_names()[0],
+                    "style" : "dracula",
+                    "coords" : [0, 0],
+                    "pixel" : [255, 255, 255],
+                    "window_properties": [0, 0, 400, 300],
+                    "tabs": [{"interval":1000, "iterate" : True}]
                 }
-                _cache = json.dumps(_cache)
+                _cache = json.dumps(self.cache)
                 f.write(_cache)
 
         # Define the QPixmap (24x24 pixels)
@@ -109,17 +108,15 @@ class Clicker(QWidget):
         # Finish painting
         _painter.end()        
         
-        # self.setWindowIcon(QIcon('./icon.ico'))
-        # self.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
         self.setWindowIcon(self.icon_pixmap)
         self.setWindowTitle(f"Chronos Project Advanced Klicker™️ Application (CPAKA)")
-        self.setGeometry(_window_properties[0], _window_properties[1], _window_properties[2], _window_properties[3])
+        self.setGeometry(self.cache['window_properties'][0], self.cache['window_properties'][1], self.cache['window_properties'][2], self.cache['window_properties'][3])
         self.style_combobox = QComboBox()
         init_widget(self.style_combobox, "theme_combobox")
         self.style_combobox.addItems(style_names())
-        self.style_combobox.textActivated.connect(self.change_style)
-        self.style_combobox.setCurrentText(_theme)
-        self.style_combobox.textActivated.emit(_theme)
+        self.style_combobox.textActivated.connect(self.change_theme)
+        self.style_combobox.setCurrentText(self.cache['theme'])
+        self.style_combobox.textActivated.emit(self.cache['theme'])
         theme_label = QLabel("Theme:")
         init_widget(theme_label, "theme_label")
         theme_label.setBuddy(self.style_combobox)
@@ -131,14 +128,14 @@ class Clicker(QWidget):
             'pastie', 'borland', 'trac', 'native', 'fruity', 'bw', 'vim', 'vs', 'tango', 'rrt', 'xcode', 'igor', 'paraiso-light', 'paraiso-dark', 
             'lovelace', 'algol', 'algol_nu', 'arduino', 'rainbow_dash', 'abap', 'solarized-dark', 'solarized-light', 'sas', 'staroffice', 'stata', 
             'stata-light', 'stata-dark', 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light', 'one-dark', 'lilypond', 'nord', 'nord-darker'])
-        self.code_style.setCurrentText(_style)
+        self.code_style.setCurrentText(self.cache['style'])
 
         style_label = QLabel("Style:")
         style_label.setBuddy(self.code_style)
         self.code_style.textActivated.connect(self.on_text_changed)
         
 
-        self.coordinates = QPushButton(f"({_coords[0]}, {_coords[1]})")
+        self.coordinates = QPushButton(f"({self.cache['coords'][0]}, {self.cache['coords'][1]})")
         self.coordinates.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         init_widget(self.coordinates, "coordinates_button", "CTRL + A to get mouse position")
         coordinates_label = QLabel("Coordinates:")
@@ -146,30 +143,14 @@ class Clicker(QWidget):
         coordinates_label.setBuddy(self.coordinates)
         self.coordinates.pressed.connect(self.press_coodinates)
 
-        self.pixel = QPushButton(f"({_pixel[0]}, {_pixel[1]}, {_pixel[2]})")
+        self.pixel = QPushButton(f"({self.cache['pixel'][0]}, {self.cache['pixel'][1]}, {self.cache['pixel'][2]})")
         self.pixel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pixel.setIcon(QIcon("./cache/pixel.png"))
+        self.pixel.setIcon(QIcon("./__pycache__/pixel.png"))
         init_widget(self.pixel, "pixel_button", "CTRL + A to get pixel color at mouse position")
         pixel_label = QLabel("Pixel color:")
         init_widget(pixel_label, "pixel_label", "CTRL + A to get pixel color at mouse position")
         pixel_label.setBuddy(self.pixel)
         self.pixel.pressed.connect(self.press_pixel)
-
-        self.delay_spin = QSpinBox()
-        init_widget(self.delay_spin, "delay_spin", "Delay between iterations")
-        delay_label = QLabel("Delay:")
-        init_widget(delay_label, "delay_label", "Delay between iterations")
-        ms_label = QLabel("ms")
-        init_widget(ms_label, "ms_label", "Delay between iterations")
-        delay_label.setBuddy(self.delay_spin)
-        ms_label.setBuddy(self.delay_spin)
-        self.delay_spin.setMaximum(999999)
-        self.delay_spin.setValue(_interval)
-        self.delay_spin.setFixedWidth(90)
-
-        self.iterate_checkbox = QCheckBox('Iterate')
-        init_widget(self.iterate_checkbox, "iterate_checkbox", "If unchecked script runs only once")
-        self.iterate_checkbox.setChecked(_iterate)
 
         self.logs_button = QPushButton("Logs")
         init_widget(self.logs_button, "logs_button", "Show logs")
@@ -199,116 +180,147 @@ class Clicker(QWidget):
         second_layout.addWidget(self.cheatsheet_button)
         second_layout.addStretch(1)
 
-        third_layout = QHBoxLayout()
-        third_layout.addWidget(self.iterate_checkbox)
-        third_layout.addWidget(delay_label)
-        third_layout.addWidget(self.delay_spin)
-        third_layout.addWidget(ms_label)
-        third_layout.addStretch(1)
+        self.tabs = QTabWidget()
+        init_widget(self.tabs, "tabs_widget")
+        self.tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.tabs.setMovable(False)
+        self.tabs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # tabs.set
+        scripts = sorted_glob()
+        for script in scripts:
+            with open(script, mode='r') as file:
+                _text = file.read().split('\n')
+                _text.pop(0)
+                _text.pop(0)
+                _text.pop(0)
+                for i in range(18):
+                    _text.pop()            
+                for i in range(len(_text)):
+                    _text[i] = _text[i][4:]
+                _code = self.format_python_code_to_html('\n'.join(_text))
 
-        with open('script.py', mode='r') as file:
-            _text = file.read().split('\n')
-            _text.pop(0)
-            _text.pop(0)
-            _text.pop(0)
-            for i in range(18):
-                _text.pop()            
-            for i in range(len(_text)):
-                _text[i] = _text[i][4:]
-            _code = self.format_python_code_to_html('\n'.join(_text))
-
-        self.code = QTextEdit(_code)
-        init_widget(self.code, "code_text")
-        self.code.setTabStopDistance(28.0)
-        self.code.setFont("Consolas, 'Courier New', monospace")
-        self.code.textChanged.connect(self.on_text_changed)
-
-        self.run_button = QPushButton('Run')
-        init_widget(self.run_button, "run_button", "Ctrl + Q to start/stop")
-        self.run_button.setCheckable(True)
-        self.run_button.pressed.connect(self.run)
-
-
-
+                self.tabs.addTab(self.make_tab(text=_code), script.replace('script_', '')[:-3])
+        
+        adrm = QHBoxLayout()
+        add_button = QPushButton('Add Tab')
+        add_button.setFixedWidth(100)
+        add_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        add_button.clicked.connect(self.add_tab_clicked)
+        self.rm_button =  QPushButton('Remove Tab')
+        self.rm_button.setFixedWidth(100)
+        self.rm_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.rm_button.clicked.connect(self.rm_tab_clicked)
+        adrm.addWidget(add_button)
+        adrm.addWidget(self.rm_button)
+        adrm.addStretch(1)
+        
         main_layout = QGridLayout(self)
         main_layout.addLayout(top_layout, 0, 0, 1, 2)
         main_layout.addLayout(second_layout, 1, 0, 1, 2)
-        main_layout.addWidget(self.code, 2, 0, 1, 2)
-        main_layout.addLayout(third_layout, 3, 0, 1, 2)
-        main_layout.addWidget(self.run_button, 4, 0, 1, 2)
+
+        main_layout.addLayout(adrm, 2, 0, 1, 2)
+        main_layout.addWidget(self.tabs, 3, 0, 1, 2)
 
         h = GlobalHotKeys({
                 '<ctrl>+a': self.on_activate_a,
                 '<ctrl>+q': self.on_activate_q})
         h.start()
         
-        self.t = None
         self.logs_thread = None
 
 
-    def on_activate_a(self):
-        _coords = Controller().position
-        self.coordinates.setText(str(_coords))
-        pyperclip.copy(str(_coords)[1:-1])
+    @Slot()
+    def add_tab_clicked(self):
+        new_tab = self.make_tab()
+        self.tabs.addTab(new_tab, f"{self.tabs.count()}")
+        self.save_code(self.tabs.count() - 1, f"script_{self.tabs.count() - 1}")
+    
+    @Slot()
+    def rm_tab_clicked(self):
+        scripts = sorted_glob()
+        for i in range(len(scripts)):
+            if scripts[i] == f"script_{self.tabs.currentIndex()}.py":
+                os.remove(scripts[i])
+                for j in range(i + 1, len(scripts)):
+                    os.rename(scripts[j], f"script_{int(scripts[j][7:-3])-1}.py")
+                self.tabs.removeTab(self.tabs.currentIndex())
+                for x in range(i, self.tabs.count()):
+                    self.tabs.setTabText(x, f"{int(self.tabs.tabText(x))-1}")
+                break
 
-        _pix = pyautogui.pixel(*_coords)
-        a = QImage('./cache/pixel.png')
-        a.fill(QColor(*_pix))
-        a.save("./cache/pixel.png")
 
-        self.pixel.setText(f"{_pix}") 
-        self.pixel.setIcon(QIcon('./cache/pixel.png'))
+    def make_tab(self, text: str = ''):
+        code = QTextEdit(text)
+        init_widget(code, "code_text")
+        code.setTabStopDistance(28.0)
+        code.setFont("Consolas, 'Courier New', monospace")
+        code.textChanged.connect(self.on_text_changed)
+
+        delay_spin = QSpinBox()
+        init_widget(delay_spin, "delay_spin", "Delay between iterations")
+        delay_label = QLabel("Delay:")
+        init_widget(delay_label, "delay_label", "Delay between iterations")
+        ms_label = QLabel("ms")
+        init_widget(ms_label, "ms_label", "Delay between iterations")
+        delay_label.setBuddy(delay_spin)
+        ms_label.setBuddy(delay_spin)
+        delay_spin.setMaximum(999999)
+        delay_spin.setValue(self.cache['tabs'][self.tabs.count()]['interval'] if len(self.cache['tabs']) > self.tabs.count() else 1000)
+        delay_spin.setFixedWidth(90)
+
+        iterate_checkbox = QCheckBox('Iterate')
+        init_widget(iterate_checkbox, "iterate_checkbox", "If unchecked script runs only once")
+        iterate_checkbox.setChecked(self.cache['tabs'][self.tabs.count()]['iterate'] if len(self.cache['tabs']) > self.tabs.count() else True)
+
+        run_button = QPushButton('Run')
+        init_widget(run_button, "run_button", "Ctrl + Q to start/stop")
+        run_button.setCheckable(True)
+        run_button.pressed.connect(self.run)
+
+        third_layout = QHBoxLayout()
+        third_layout.addWidget(iterate_checkbox)
+        third_layout.addWidget(delay_label)
+        third_layout.addWidget(delay_spin)
+        third_layout.addWidget(ms_label)
+        third_layout.addStretch(1)
+
+        tabs_widget = QWidget()
+        tabs_layout = QVBoxLayout(tabs_widget)
+        tabs_layout.addWidget(code)
+        tabs_layout.addLayout(third_layout)
+        tabs_layout.addWidget(run_button)
+
+        self.tabs_dict.append({
+            'code' : code,
+            'delay_spin' : delay_spin,
+            'iterate_checkbox' : iterate_checkbox,
+            'run_button' : run_button,
+            'thread' : None
+        })
+        return tabs_widget
         
 
-    def on_activate_q(self):
-        self.run_button.click()
-
-    
     @Slot(str)
-    def change_style(self, style_name):
-        QApplication.setStyle(QStyleFactory.create(style_name))
+    def run(self):
+        i = self.tabs.currentIndex()
+        if self.tabs_dict[i]['run_button'].text() == 'Stop':
+            if self.tabs_dict[i]['thread'] is not None: self.tabs_dict[i]['thread'].stop()
+            self.tabs_dict[i]['run_button'].setText('Run')
+        else:
+            self.tabs_dict[i]['run_button'].setText('Stop')
+
+            self.save_code(self.tabs.currentIndex(), f"script_{i}")
+
+            spec = importlib.util.spec_from_file_location(f'./script_{i}.py', f'./script_{i}.py')
+            foo = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(foo)
+            self.tabs_dict[i]['thread'] = StoppableThread(foo.f, self.tabs_dict[i]['delay_spin'].value(), self.tabs_dict[i]['iterate_checkbox'].isChecked())            
+            self.tabs_dict[i]['thread'].start()
 
 
-    @Slot(str)
-    def closeEvent(self, close_event):
-        if self.t is not None: self.t.stop()
-        if self.logs_thread is not None: self.logs_thread.stop()        
-        self.save_code()
-        with open('./cache/cache.json', 'r') as f:
-            js: dict = json.loads(f.read())
-            _g = self.geometry()
-            _c = self.coordinates.text()[1:-1].split(', ')
-            _p = self.pixel.text()[1:-1].split(', ')
-            js.update({
-                "theme": self.style_combobox.currentText(),
-                "style": self.code_style.currentText(),
-                "coords": [int(_c[0]), int(_c[1])],
-                "pixel": [int(_p[0]), int(_p[1]), int(_p[2])],
-                "interval": int(self.delay_spin.text()),
-                "iterate": self.iterate_checkbox.isChecked(),
-                "window_properties":[_g.x(), _g.y(), _g.width(), _g.height()]
-                })
-            js = json.dumps(js)
-        with open('./cache/cache.json', 'w+') as f:
-            f.write(js)
-        QApplication.quit()
-
-    
-    @Slot(str)
-    def press_coodinates(self):
-        pyperclip.copy(self.coordinates.text()[1:-1])
-        self.code.insertPlainText(self.coordinates.text()[1:-1])
-
-
-    @Slot(str)
-    def press_pixel(self):
-        pyperclip.copy(self.pixel.text())
-        self.code.insertPlainText(self.pixel.text())
-
-
-    def save_code(self):
-        c = self.code.toPlainText().replace('	', '    ')
-        self.code.setText(c)
+    def save_code(self, index: int, name: str):
+        c = self.tabs_dict[index]['code'].toPlainText().replace('	', '    ')
+        self.tabs_dict[index]['code'].setText(c)
         c = c.split('\n')
         for i in range(len(c)):
             c[i] = f"    {c[i]}"
@@ -332,47 +344,26 @@ def f(timeout: int, iterate: bool):
         except Exception as e:
             logger.error(f"{e}")""")
 
-        with open('./script.py', mode='w') as file:
+        with open(f'./{name}.py', mode='w') as file:
             file.write('\n'.join(c))
 
 
-    @Slot(str)
-    def run(self):
-        if self.run_button.text() == 'Stop':
-            if self.t is not None: self.t.stop()
-            self.run_button.setText('Run')
-        else:
-            self.run_button.setText('Stop')
-            self.save_code()
-
-            spec = importlib.util.spec_from_file_location('./script.py', './script.py')
-            foo = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(foo)
-            self.t = StoppableThread(foo.f, self.delay_spin.value(), self.iterate_checkbox.isChecked())            
-            self.t.start()
-    
-
-    def format_python_code_to_html(self, code: str) -> str:
-        # lexer = get_lexer_by_name('python')
-        lexer = PythonLexer()
-        formatter = HtmlFormatter(full=False, noclasses=True, nobackground=True, style=self.code_style.currentText())
-        highlighted_code: str = highlight(code, lexer, formatter)
-        for _f in functions:
-            if _f in highlighted_code:
-                highlighted_code = highlighted_code.replace(f'{_f}(', f'<span style="color:{color_f}">{_f}</span>(')
-        return highlighted_code
+    def save_all(self):
+        for i in range(self.tabs.count()):
+            self.save_code(i, f'script_{i}')
 
 
     @Slot(str)
     def on_text_changed(self):
-        self.code.textChanged.disconnect()
-        pos = self.code.textCursor().position()
-        text = self.format_python_code_to_html(self.code.toPlainText())
-        self.code.setText(text)
+        i = self.tabs.currentIndex()
+        self.tabs_dict[i]['code'].textChanged.disconnect()
+        pos = self.tabs_dict[i]['code'].textCursor().position()
+        text = self.format_python_code_to_html(self.tabs_dict[i]['code'].toPlainText())
+        self.tabs_dict[i]['code'].setText(text)
 
-        text = self.code.toPlainText()
+        text = self.tabs_dict[i]['code'].toPlainText()
 
-        cursor = self.code.textCursor()
+        cursor = self.tabs_dict[i]['code'].textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.MoveAnchor, n=pos)
         
         if text[pos-1:pos] == '\n':
@@ -390,15 +381,91 @@ def f(timeout: int, iterate: bool):
                 indent +='    '
             cursor.insertText(indent)   # TODO figure out how to handle deletions
 
-        self.code.setTextCursor(cursor)
-        self.code.textChanged.connect(self.on_text_changed)
+        self.tabs_dict[i]['code'].setTextCursor(cursor)
+        self.tabs_dict[i]['code'].textChanged.connect(self.on_text_changed)
+
+
+    def on_activate_a(self):
+        _coords = Controller().position
+        self.coordinates.setText(str(_coords))
+        pyperclip.copy(str(_coords)[1:-1])
+
+        _pix = pyautogui.pixel(*_coords)
+        a = QImage('./__pycache__/pixel.png')
+        a.fill(QColor(*_pix))
+        a.save("./__pycache__/pixel.png")
+
+        self.pixel.setText(f"{_pix}") 
+        self.pixel.setIcon(QIcon('./__pycache__/pixel.png'))
+        
+
+    def on_activate_q(self):
+        i = self.tabs.currentIndex()
+        self.tabs_dict[i]['run_button'].click()
+
+    
+    @Slot(str)
+    def change_theme(self, style_name):
+        QApplication.setStyle(QStyleFactory.create(style_name))
+
+
+    @Slot(str)
+    def closeEvent(self, close_event):
+        if self.logs_thread is not None: self.logs_thread.stop()        
+        _tabs = []
+        for tab in self.tabs_dict:
+            if tab['thread'] is not None: tab['thread'].stop()
+            _tabs.append({
+                'interval' : int(tab['delay_spin'].text()),
+                'iterate' : tab['iterate_checkbox'].isChecked()
+            })
+        self.save_all()
+        with open('./__pycache__/cache.json', 'r') as f:
+            js: dict = json.loads(f.read())
+            _g = self.geometry()
+            _c = self.coordinates.text()[1:-1].split(', ')
+            _p = self.pixel.text()[1:-1].split(', ')
+            js.update({
+                "theme": self.style_combobox.currentText(),
+                "style": self.code_style.currentText(),
+                "coords": [int(_c[0]), int(_c[1])],
+                "pixel": [int(_p[0]), int(_p[1]), int(_p[2])],
+                "window_properties":[_g.x(), _g.y(), _g.width(), _g.height()],
+                "tabs": _tabs
+            })
+            js = json.dumps(js)
+        with open('./__pycache__/cache.json', 'w+') as f:
+            f.write(js)
+        QApplication.quit()
+
+    
+    @Slot(str)
+    def press_coodinates(self):
+        pyperclip.copy(self.coordinates.text()[1:-1])
+        self.tabs_dict[self.tabs.currentIndex()]['code'].insertPlainText(self.coordinates.text()[1:-1])
+
+
+    @Slot(str)
+    def press_pixel(self):
+        pyperclip.copy(self.pixel.text())
+        self.tabs_dict[self.tabs.currentIndex()]['code'].insertPlainText(self.pixel.text())
+
+
+    def format_python_code_to_html(self, code: str) -> str:
+        lexer = PythonLexer()
+        formatter = HtmlFormatter(full=False, noclasses=True, nobackground=True, style=self.code_style.currentText())
+        highlighted_code: str = highlight(code, lexer, formatter)
+        for _f in functions:
+            if _f in highlighted_code:
+                highlighted_code = highlighted_code.replace(f'{_f}(', f'<span style="color:{color_f}">{_f}</span>(')
+        return highlighted_code
+
 
     @Slot()
     def show_logs(self):
         class LogsWindow(QWidget):
             def __init__(self_logs):
                 super().__init__()
-                # self_logs.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
                 self_logs.setWindowIcon(self.icon_pixmap)
                 self_logs.setWindowTitle('CPAKA logs')
                 layout = QVBoxLayout()
@@ -411,7 +478,7 @@ def f(timeout: int, iterate: bool):
                 self.logs_thread.start()
 
             def do_update(self_logs):
-                with open('./cache/log.log', 'r') as f:
+                with open('./__pycache__/log.log', 'r') as f:
                     _l = f.read().split('\n')
                     _l.reverse()
                     _l = '<br>'.join(_l)
@@ -445,7 +512,6 @@ def f(timeout: int, iterate: bool):
         class CheatsheetWindow(QWidget):
             def __init__(self_cheat):
                 super().__init__()
-                # self_cheat.setWindowIcon(QPixmap.fromImage(QImage.fromData(icon), Qt.ImageConversionFlag.AutoColor))
                 self_cheat.setWindowIcon(self.icon_pixmap)
                 self_cheat.setWindowTitle('CPAKA cheatsheet')
                 self_cheat.setGeometry(self.geometry().x(), self.geometry().y(), 800, 600)

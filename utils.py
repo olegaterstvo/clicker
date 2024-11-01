@@ -139,13 +139,13 @@ def screenshot(image_file_name: str = 'screenshot.png', region: tuple[int,int,in
     `image_file_name` : Image file name to be saved with.    
     `region` : Part of screen to capture. `tuple[x_start, y_start, x_offset, y_offset]`.    
     `all_screens` : If *True* captures all screens, otherwise only main screen. Defaults to *False*"""
-    pyautogui.screenshot(imageFilename=f"./images/{image_file_name}", region=region, allScreens=all_screens)
+    pyautogui.screenshot(imageFilename=f"{image_file_name}", region=region, allScreens=all_screens)
 
 def locateOnImage(what_to_find: str, where_to_find: str, grayscale: bool = True, region: tuple[int, int, int, int]|None = None, confidence: float = 0.999, return_center: bool = True):
     """Locates one image on the other image.
     
-    `what_to_find` : Filename of image to find. Images should be in `images` folder.
-    `where_to_find` : Filename of image where to find first image. Images should be in `images` folder.
+    `what_to_find` : Filename of image to find.
+    `where_to_find` : Filename of image where to find first image.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
     `confidence` : Between 0 and 1.
@@ -154,9 +154,9 @@ def locateOnImage(what_to_find: str, where_to_find: str, grayscale: bool = True,
     If image not found returns **`tuple[None, None] | tuple[None, None, None, None]`**"""
     try:
         if IS_OPENCV_INSTALLED:
-            a = pyautogui.locate(needleImage=f"./images/{what_to_find}", haystackImage=f"./images/{where_to_find}", grayscale=grayscale, region=region, confidence=confidence)
+            a = pyautogui.locate(needleImage=f"{what_to_find}", haystackImage=f"{where_to_find}", grayscale=grayscale, region=region, confidence=confidence)
         else:
-            a = pyautogui.locate(needleImage=f"./images/{what_to_find}", haystackImage=f"./images/{where_to_find}", grayscale=grayscale, region=region)
+            a = pyautogui.locate(needleImage=f"{what_to_find}", haystackImage=f"{where_to_find}", grayscale=grayscale, region=region)
     except pyautogui.ImageNotFoundException as e:
         logger.warning('Image not found')
         if return_center:
@@ -172,7 +172,7 @@ def locateOnImage(what_to_find: str, where_to_find: str, grayscale: bool = True,
 def locateOnScreen(image: str, min_search_time: int = 0, grayscale: bool = True, region: tuple[int, int, int, int]|None = None, confidence: float = 0.999, return_center: bool = True):
     """Locates image on screen
     
-    `image` : Filename of image to find. Images should be in `images` folder.
+    `image` : Filename of image to find.
     `min_search_time` : Amount of time in *milliseconds* to repeat taking screenshots and trying to locate a match. The default of 0 performs a single search.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
@@ -182,9 +182,9 @@ def locateOnScreen(image: str, min_search_time: int = 0, grayscale: bool = True,
     If image not found returns **`tuple[None, None] | tuple[None, None, None, None]`**"""
     try:
         if IS_OPENCV_INSTALLED:
-            a = pyautogui.locateOnScreen(image=f"./images/{image}", minSearchTime=min_search_time/1000, grayscale=grayscale, region=region, confidence=confidence)
+            a = pyautogui.locateOnScreen(image=f"{image}", minSearchTime=min_search_time/1000, grayscale=grayscale, region=region, confidence=confidence)
         else:
-            a = pyautogui.locateOnScreen(image=f"./images/{image}", minSearchTime=min_search_time/1000, grayscale=grayscale, region=region)
+            a = pyautogui.locateOnScreen(image=f"{image}", minSearchTime=min_search_time/1000, grayscale=grayscale, region=region)
     except pyautogui.ImageNotFoundException as e:
         logger.warning('Image not found')
         if return_center:
@@ -200,7 +200,7 @@ def locateOnScreen(image: str, min_search_time: int = 0, grayscale: bool = True,
 def locateOnWindow(image: str, window_title: str, grayscale: bool = True, confidence: float = 0.999, return_center: bool = True):
     """Locates image on window
     
-    `image` : Filename of image to find. Images should be in `images` folder.
+    `image` : Filename of image to find.
     `min_search_time` : Amount of time in *milliseconds* to repeat taking screenshots and trying to locate a match. The default of 0 performs a single search.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
@@ -211,9 +211,9 @@ def locateOnWindow(image: str, window_title: str, grayscale: bool = True, confid
 
     try:
         if IS_OPENCV_INSTALLED:
-            a = pyautogui.locateOnWindow(image=f"./images/{image}", title=window_title, grayscale=grayscale, confidence=confidence)
+            a = pyautogui.locateOnWindow(image=f"{image}", title=window_title, grayscale=grayscale, confidence=confidence)
         else:
-            a = pyautogui.locateOnWindow(image=f"./images/{image}", title=window_title, grayscale=grayscale)
+            a = pyautogui.locateOnWindow(image=f"{image}", title=window_title, grayscale=grayscale)
     except pyautogui.ImageNotFoundException:
         logger.warning('Image not found')
         if return_center:
@@ -232,8 +232,8 @@ def locateAllOnImage(what_to_find: str, where_to_find: str, grayscale: bool = Tr
                     ) -> list[tuple[int, int]] | list[tuple[int, int, int, int]] | list[tuple[None, None]] | list[tuple[None, None, None, None]]:
     """Locates one image on the other image.
     
-    `what_to_find` : Filename of image to find. Images should be in `images` folder.
-    `where_to_find` : Filename of image where to find first image. Images should be in `images` folder.
+    `what_to_find` : Filename of image to find.
+    `where_to_find` : Filename of image where to find first image.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
     `confidence` : Between 0 and 1.
@@ -242,9 +242,9 @@ def locateAllOnImage(what_to_find: str, where_to_find: str, grayscale: bool = Tr
     If image not found returns **`list[tuple[None, None]] | list[tuple[None, None, None, None]]`**"""
     try:
         if IS_OPENCV_INSTALLED:
-            a = list(pyautogui.locateAll(needleImage=f"./images/{what_to_find}", haystackImage=f"./images/{where_to_find}", grayscale=grayscale, region=region, confidence=confidence))
+            a = list(pyautogui.locateAll(needleImage=f"{what_to_find}", haystackImage=f"{where_to_find}", grayscale=grayscale, region=region, confidence=confidence))
         else:
-            a = list(pyautogui.locateAll(needleImage=f"./images/{what_to_find}", haystackImage=f"./images/{where_to_find}", grayscale=grayscale, region=region))
+            a = list(pyautogui.locateAll(needleImage=f"{what_to_find}", haystackImage=f"{where_to_find}", grayscale=grayscale, region=region))
     except pyautogui.ImageNotFoundException as e:
         logger.warning('Image not found')
         if return_center:
@@ -266,7 +266,7 @@ def locateAllOnScreen(image: str, grayscale: bool = True,
                     ) -> list[tuple[int, int]] | list[tuple[int, int, int, int]] | list[tuple[None, None]] | list[tuple[None, None, None, None]]:
     """Locates image on window
     
-    `image` : Filename of image to find. Images should be in `images` folder.
+    `image` : Filename of image to find.
     `grayscale` : Whether to convert images to grayscale. Defaults to *True*.
     `region` : Part of image where to find. `tuple[x_start, y_start, x_offset, y_offset]`.
     `confidence` : Between 0 and 1.
@@ -275,9 +275,9 @@ def locateAllOnScreen(image: str, grayscale: bool = True,
     If image not found returns **`list[tuple[None, None]] | list[tuple[None, None, None, None]]`**"""
     try:
         if IS_OPENCV_INSTALLED:
-            a = list(pyautogui.locateAllOnScreen(image=f"./images/{image}", grayscale=grayscale, region=region, confidence=confidence))
+            a = list(pyautogui.locateAllOnScreen(image=f"{image}", grayscale=grayscale, region=region, confidence=confidence))
         else:
-            a = list(pyautogui.locateAllOnScreen(image=f"./images/{image}", grayscale=grayscale, region=region))
+            a = list(pyautogui.locateAllOnScreen(image=f"{image}", grayscale=grayscale, region=region))
     except pyautogui.ImageNotFoundException:
         logger.warning('Image not found')
         if return_center:

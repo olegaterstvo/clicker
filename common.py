@@ -176,8 +176,8 @@ f"""<body style="font-size:14px"><span style="color:{color_f}">log</span>(<code 
     <code style="color:{color_v}">all_screens</code> : If <i><span style="color:{color_m}">True</span></i> captures all screens, otherwise only main screen. Defaults to <i><span style="color:{color_m}">False</span></i>
 
 <span style="color:{color_f}">locateOnImage</span>(<code style="color:{color_v}">what_to_find: <span style="color:{color_t}">str</span>, where_to_find: <span style="color:{color_t}">str</span>, grayscale: <span style="color:{color_t}">bool</span> = <span style="color:{color_m}">True</span>, region: <span style="color:{color_t}">tuple</span>[<span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>]|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>, confidence: <span style="color:{color_t}">float</span> = 0.999, return_center: <span style="color:{color_t}">bool</span> = <span style="color:{color_m}">True</span></code>) - Locates one image on the other image.
-    <code style="color:{color_v}">what_to_find</code> : Filename of image to find. Images should be in <i>images</i> folder.
-    <code style="color:{color_v}">where_to_find</code> : Filename of image where to find first image. Images should be in <i>images</i> folder.
+    <code style="color:{color_v}">what_to_find</code> : Filename of image to find.
+    <code style="color:{color_v}">where_to_find</code> : Filename of image where to find first image.
     <code style="color:{color_v}">grayscale</code> : Whether to convert images to grayscale. Defaults to <i><span style="color:{color_m}">True</span></i>.
     <code style="color:{color_v}">region</code> : Part of image where to find. <code style="color:{color_v}"><span style="color:{color_t}">tuple</span>[x_start, y_start, x_offset, y_offset]</code>.
     <code style="color:{color_v}">confidence</code> : Between 0 and 1.
@@ -189,8 +189,8 @@ f"""<body style="font-size:14px"><span style="color:{color_f}">log</span>(<code 
                      region: <span style="color:{color_t}">tuple</span>[<span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>]|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>,
                      confidence: <span style="color:{color_t}">float</span> = 0.999, return_center: <span style="color:{color_t}">bool</span> = <span style="color:{color_m}">True</span>
                     </code>) - Locates one image on the other image.    
-    <code style="color:{color_v}">what_to_find</code> : Filename of image to find. Images should be in <i>images</i> folder.
-    <code style="color:{color_v}">where_to_find</code> : Filename of image where to find first image. Images should be in <i>images</i> folder.
+    <code style="color:{color_v}">what_to_find</code> : Filename of image to find.
+    <code style="color:{color_v}">where_to_find</code> : Filename of image where to find first image.
     <code style="color:{color_v}">grayscale</code> : Whether to convert images to grayscale. Defaults to <i><span style="color:{color_m}">True</span></i>.
     <code style="color:{color_v}">region</code> : Part of image where to find. <code style="color:{color_v}"><span style="color:{color_t}">tuple</span>[x_start, y_start, x_offset, y_offset]</code>.
     <code style="color:{color_v}">confidence</code> : Between 0 and 1.
@@ -199,7 +199,7 @@ f"""<body style="font-size:14px"><span style="color:{color_f}">log</span>(<code 
     If image not found returns <b><code style="color:{color_v}"><span style="color:{color_t}">list</span>[<span style="color:{color_t}">tuple</span>[<span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>]] | <span style="color:{color_t}">list</span>[<span style="color:{color_t}">tuple</span>[<span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>]]</code></b>
 
 <span style="color:{color_f}">locateOnScreen</span>(<code style="color:{color_v}">image: <span style="color:{color_t}">str</span>, min_search_time: <span style="color:{color_t}">int</span> = 0, grayscale: <span style="color:{color_t}">bool</span> = <span style="color:{color_m}">True</span>, region: <span style="color:{color_t}">tuple</span>[<span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>]|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>, confidence: <span style="color:{color_t}">float</span> = 0.999, return_center: <span style="color:{color_t}">bool</span> = <span style="color:{color_m}">True</span></code>) - Locates image on screen
-    <code style="color:{color_v}">image</code> : Filename of image to find. Images should be in <i>images</i> folder.
+    <code style="color:{color_v}">image</code> : Filename of image to find.
     <code style="color:{color_v}">min_search_time</code> : Amount of time in <i>milliseconds</i> to repeat taking screenshots and trying to locate a match. The default of 0 performs a single search.
     <code style="color:{color_v}">grayscale</code> : Whether to convert images to grayscale. Defaults to <i><span style="color:{color_m}">True</span></i>.
     <code style="color:{color_v}">region</code> : Part of image where to find. <code style="color:{color_v}"><span style="color:{color_t}">tuple</span>[x_start, y_start, x_offset, y_offset]</code>.
@@ -212,7 +212,7 @@ f"""<body style="font-size:14px"><span style="color:{color_f}">log</span>(<code 
                      region: <span style="color:{color_t}">tuple</span>[<span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>, <span style="color:{color_t}">int</span>]|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>,
                      confidence: <span style="color:{color_t}">float</span> = 0.999, return_center: <span style="color:{color_t}">bool</span> = <span style="color:{color_m}">True</span>
                     </code>) - Locates image on window
-    <code style="color:{color_v}">image</code> : Filename of image to find. Images should be in <i>images</i> folder.
+    <code style="color:{color_v}">image</code> : Filename of image to find.
     <code style="color:{color_v}">grayscale</code> : Whether to convert images to grayscale. Defaults to <i><span style="color:{color_m}">True</span></i>.
     <code style="color:{color_v}">region</code> : Part of image where to find. <code style="color:{color_v}"><span style="color:{color_t}">tuple</span>[x_start, y_start, x_offset, y_offset]</code>.
     <code style="color:{color_v}">confidence</code> : Between 0 and 1.
@@ -221,7 +221,7 @@ f"""<body style="font-size:14px"><span style="color:{color_f}">log</span>(<code 
     If image not found returns <b><code style="color:{color_v}"><span style="color:{color_t}">list</span>[<span style="color:{color_t}">tuple</span>[<span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>]] | <span style="color:{color_t}">list</span>[<span style="color:{color_t}">tuple</span>[<span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>]]</code></b>
 
 <span style="color:{color_f}">locateOnWindow</span>(<code style="color:{color_v}">image: <span style="color:{color_t}">str</span>, window_title: <span style="color:{color_t}">str</span>, grayscale: <span style="color:{color_t}">bool</span> = <span style="color:{color_m}">True</span>, confidence: <span style="color:{color_t}">float</span> = 0.999, return_center: <span style="color:{color_t}">bool</span> = <span style="color:{color_m}">True</span></code>) - Locates image on window
-    <code style="color:{color_v}">image</code> : Filename of image to find. Images should be in <i>images</i> folder.
+    <code style="color:{color_v}">image</code> : Filename of image to find.
     <code style="color:{color_v}">min_search_time</code> : Amount of time in <i>milliseconds</i> to repeat taking screenshots and trying to locate a match. The default of 0 performs a single search.
     <code style="color:{color_v}">grayscale</code> : Whether to convert images to grayscale. Defaults to <i><span style="color:{color_m}">True</span></i>.
     <code style="color:{color_v}">region</code> : Part of image where to find. <code style="color:{color_v}"><span style="color:{color_t}">tuple</span>[x_start, y_start, x_offset, y_offset]</code>.

@@ -1,3 +1,4 @@
+import glob
 import os
 import sys
 import logging
@@ -8,12 +9,10 @@ from common import example
 import keys
 import utils
 
-if not os.path.exists('./cache/'):
-    os.makedirs("./cache/")
-if not os.path.exists('./images/'):
-    os.makedirs("./images/")
-if not os.path.exists('./script.py'):
-    with open('script.py', 'w+') as file:
+if not os.path.exists('./__pycache__/'):
+    os.makedirs("./__pycache__/")
+if len(glob.glob('script_*.py')) == 0:
+    with open('script_0.py', 'w+') as file:
         file.write(example)
 
 
@@ -33,7 +32,7 @@ dictConfig(
             },
             "file": {
                 "class": "logging.FileHandler",
-                "filename": "./cache/log.log",
+                "filename": "./__pycache__/log.log",
                 "formatter": "default",
             }
         },

@@ -137,18 +137,18 @@ class Clicker(QWidget):
 
         self.coordinates = QPushButton(f"({self.cache['coords'][0]}, {self.cache['coords'][1]})")
         self.coordinates.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        init_widget(self.coordinates, "coordinates_button", "CTRL + A to get mouse position")
+        init_widget(self.coordinates, "coordinates_button", "Ctrl + A to get mouse position")
         coordinates_label = QLabel("Coordinates:")
-        init_widget(coordinates_label, "coordinates_label", "CTRL + A to get mouse position")
+        init_widget(coordinates_label, "coordinates_label", "Ctrl + A to get mouse position")
         coordinates_label.setBuddy(self.coordinates)
         self.coordinates.pressed.connect(self.press_coodinates)
 
         self.pixel = QPushButton(f"({self.cache['pixel'][0]}, {self.cache['pixel'][1]}, {self.cache['pixel'][2]})")
         self.pixel.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pixel.setIcon(QIcon("./__pycache__/pixel.png"))
-        init_widget(self.pixel, "pixel_button", "CTRL + A to get pixel color at mouse position")
+        init_widget(self.pixel, "pixel_button", "Ctrl + A to get pixel color at mouse position")
         pixel_label = QLabel("Pixel color:")
-        init_widget(pixel_label, "pixel_label", "CTRL + A to get pixel color at mouse position")
+        init_widget(pixel_label, "pixel_label", "Ctrl + A to get pixel color at mouse position")
         pixel_label.setBuddy(self.pixel)
         self.pixel.pressed.connect(self.press_pixel)
 
@@ -223,7 +223,8 @@ class Clicker(QWidget):
 
         h = GlobalHotKeys({
                 '<ctrl>+a': self.on_activate_a,
-                '<ctrl>+q': self.on_activate_q})
+                '<ctrl>+q': self.on_activate_q,
+                '<alt>+q': self.on_activate_q_alt})
         h.start()
         
         self.logs_thread = None
@@ -273,7 +274,7 @@ class Clicker(QWidget):
         iterate_checkbox.setChecked(self.cache['tabs'][self.tabs.count()]['iterate'] if len(self.cache['tabs']) > self.tabs.count() else True)
 
         run_button = QPushButton('Run')
-        init_widget(run_button, "run_button", "Ctrl + Q to start/stop")
+        init_widget(run_button, "run_button", "Ctrl + Q to start/stop\nAlt + Q to stop all")
         run_button.setCheckable(True)
         run_button.pressed.connect(self.run)
 
@@ -402,6 +403,12 @@ def f(timeout: int, iterate: bool):
     def on_activate_q(self):
         i = self.tabs.currentIndex()
         self.tabs_dict[i]['run_button'].click()
+
+
+    def on_activate_q_alt(self):
+        for i in range(len(self.tabs_dict)):
+            if self.tabs_dict[i]['thread'] is not None:
+                self.tabs_dict[i]['thread'].stop()
 
     
     @Slot(str)

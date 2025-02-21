@@ -34,18 +34,46 @@ def wait(milliseconds: int):
     """Alias for sleep()"""
     sleep(milliseconds)
 
-def holdKey(hex_key_code: Key|int):
-    """Performs button push action"""
-    x = INPUT(type=INPUT_KEYBOARD,
-              ki=KEYBDINPUT(wVk=hex_key_code))
-    user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
+def holdKey(hexKeyCode):
+    extra = ctypes.c_ulong(0)
+    ii_ = Input_I()
+    ii_.ki = KeyBdInput( 0, hexKeyCode, 0x0008, 0, ctypes.pointer(extra) )
+    x = Input( ctypes.c_ulong(1), ii_ )
+    ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
-def releaseKey(hex_key_code: Key|int):
-    """Performs button release action"""
-    x = INPUT(type=INPUT_KEYBOARD,
-              ki=KEYBDINPUT(wVk=hex_key_code,
-                            dwFlags=KEYEVENTF_KEYUP))
-    user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
+def releaseKey(hexKeyCode):
+    extra = ctypes.c_ulong(0)
+    ii_ = Input_I()
+    ii_.ki = KeyBdInput( 0, hexKeyCode, 0x0008 | 0x0002, 0, ctypes.pointer(extra) )
+    x = Input( ctypes.c_ulong(1), ii_ )
+    ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
+
+def leftHold():
+    extra = ctypes.c_ulong(0)
+    ii_ = Input_I()
+    ii_.mi = MouseInput(0, 0, 0, 0x0002, 0, ctypes.pointer(extra))
+    cmd = Input(ctypes.c_ulong(0), ii_)
+    ctypes.windll.user32.SendInput(1, ctypes.pointer(cmd), ctypes.sizeof(cmd))
+
+def leftRelease():
+    extra = ctypes.c_ulong(0)
+    ii_ = Input_I()
+    ii_.mi = MouseInput(0, 0, 0, 0x0004, 0, ctypes.pointer(extra))
+    cmd = Input(ctypes.c_ulong(0), ii_)
+    ctypes.windll.user32.SendInput(1, ctypes.pointer(cmd), ctypes.sizeof(cmd))
+
+# def holdKey(hex_key_code: Key|int):
+#     """Performs button push action"""
+#     x = INPUT(type=INPUT_KEYBOARD,
+#               ki=KEYBDINPUT(wVk=hex_key_code))
+#     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
+
+# def releaseKey(hex_key_code: Key|int):
+#     """Performs button release action"""
+#     x = INPUT(type=INPUT_KEYBOARD,
+#               ki=KEYBDINPUT(wVk=hex_key_code,
+#                             dwFlags=KEYEVENTF_KEYUP))
+#     user32.SendInput(1, ctypes.byref(x), ctypes.sizeof(x))
 
 def pressKey(hex_key_code: Key|int, interval: int = 20):
     """Performs push and then release actions
@@ -63,21 +91,26 @@ def isMatchesColor(x: int, y:int, color: tuple[int,int,int], tolerance: int = 0)
     """Return True if the pixel at `x`, `y` is matches the expected color of the *RGB tuple*, each color represented from 0 to 255, within an optional `tolerance`."""
     return pyautogui.pixelMatchesColor(x=x, y=y, expectedRGBColor=color, tolerance=tolerance)
 
-def leftClick(x: int|None = None, y: int|None = None, clicks_count: int = 1, interval: float = 0.0):
+def leftClick(x: int|None = None, y: int|None = None, interval: int = 10):
     """Performs pressing a left mouse button click at given coordinates. If no arguments are passed, the button is clicked at the mouse cursor's current location.
 
-    The `clicks_count` argument is an int of how many clicks to make, and defaults to 1.
+    The `interval` : The amount of time to wait between push and release actions in *milliseconds*. Defafults to `10`ms"""
+    if x is not None and y is not None:
+        moveTo(x, y)
+    leftHold()
+    sleep(interval)
+    leftRelease()
+    # pyautogui.click(x=x, y=y, clicks=clicks_count, interval=interval, button="left")
 
-    The `interval` argument is an int or float of how many seconds to wait in between each click"""
-    pyautogui.click(x=x, y=y, clicks=clicks_count, interval=interval, button="left")
-
-def rightClick(x: int|None = None, y: int|None = None, clicks_count: int = 1, interval: float = 0.0):
+def rightClick(x: int|None = None, y: int|None = None, clicks_count:int = 1, interval: float = 0.0):
     """Performs pressing a right mouse button click at given coordinates. If no arguments are passed, the button is clicked at the mouse cursor's current location.
 
     The `clicks_count` argument is an int of how many clicks to make, and defaults to 1.
 
     The `interval` argument is an int or float of how many seconds to wait in between each click"""
-    pyautogui.click(x=x, y=y, clicks=clicks_count, interval=interval, button="right")
+    if x is not None and y is not None:
+        moveTo(x, y)
+    pyautogui.click(clicks=clicks_count, interval=interval, button="right")
 
 def middleClick(x: int|None = None, y: int|None = None, clicks_count: int = 1, interval: float = 0.0):
     """Performs pressing a middle mouse button click at given coordinates. If no arguments are passed, the button is clicked at the mouse cursor's current location.
@@ -293,8 +326,16 @@ def locateAllOnScreen(image: str, grayscale: bool = True,
             a[i] = tuple(a[i])
     return a
 
+def getWindow(title: str):
+    """Returns a window object with a given name
+    """
+    if len( w:=pygetwindow.getWindowsWithTitle(title) ) == 0:
+        raise Exception(f"Window with a name {title} not found")
+    window: pygetwindow.BaseWindow = w[0]
+    return window
+
 def get_functions() -> list[dict[str, str]]:
-    func: list[callable] = [log, sleep, wait, holdKey, releaseKey, pressKey, getPixel, isMatchesColor, leftClick, rightClick, middleClick, moveTo, moveRel, dragTo, dragRel, scroll, write, screenshot, locateOnImage, locateAllOnImage, locateOnScreen, locateAllOnScreen, locateOnWindow]
+    func: list[callable] = [log, sleep, wait, holdKey, releaseKey, pressKey, getPixel, isMatchesColor, leftClick, rightClick, middleClick, moveTo, moveRel, dragTo, dragRel, scroll, write, screenshot, locateOnImage, locateAllOnImage, locateOnScreen, locateAllOnScreen, locateOnWindow, getWindow]
     l = []
     print(moveRel.__annotations__)
     for f in func:

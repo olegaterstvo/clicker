@@ -2,78 +2,111 @@ import ctypes
 from ctypes import wintypes
 from keys import Key
 
-user32 = ctypes.WinDLL('user32', use_last_error=True)
+SendInput = ctypes.windll.user32.SendInput
 
-INPUT_MOUSE    = 0
-INPUT_KEYBOARD = 1
-INPUT_HARDWARE = 2
+# C struct redefinitions 
+PUL = ctypes.POINTER(ctypes.c_ulong)
+class KeyBdInput(ctypes.Structure):
+    _fields_ = [("wVk", ctypes.c_ushort),
+                ("wScan", ctypes.c_ushort),
+                ("dwFlags", ctypes.c_ulong),
+                ("time", ctypes.c_ulong),
+                ("dwExtraInfo", PUL)]
 
-KEYEVENTF_EXTENDEDKEY = 0x0001
-KEYEVENTF_KEYUP       = 0x0002
-KEYEVENTF_UNICODE     = 0x0004
-KEYEVENTF_SCANCODE    = 0x0008
+class HardwareInput(ctypes.Structure):
+    _fields_ = [("uMsg", ctypes.c_ulong),
+                ("wParamL", ctypes.c_short),
+                ("wParamH", ctypes.c_ushort)]
 
-MAPVK_VK_TO_VSC = 0
+class MouseInput(ctypes.Structure):
+    _fields_ = [("dx", ctypes.c_long),
+                ("dy", ctypes.c_long),
+                ("mouseData", ctypes.c_ulong),
+                ("dwFlags", ctypes.c_ulong),
+                ("time",ctypes.c_ulong),
+                ("dwExtraInfo", PUL)]
 
-# msdn.microsoft.com/en-us/library/dd375731
-VK_TAB  = 0x09
-VK_MENU = 0x12
+class Input_I(ctypes.Union):
+    _fields_ = [("ki", KeyBdInput),
+                 ("mi", MouseInput),
+                 ("hi", HardwareInput)]
 
-KEY_E = 0x45
-KEY_W = 0x57
+class Input(ctypes.Structure):
+    _fields_ = [("type", ctypes.c_ulong),
+                ("ii", Input_I)]
+    
+# user32 = ctypes.WinDLL('user32', use_last_error=True)
 
-# C struct definitions
+# INPUT_MOUSE    = 0
+# INPUT_KEYBOARD = 1
+# INPUT_HARDWARE = 2
 
-wintypes.ULONG_PTR = wintypes.WPARAM
+# KEYEVENTF_EXTENDEDKEY = 0x0001
+# KEYEVENTF_KEYUP       = 0x0002
+# KEYEVENTF_UNICODE     = 0x0004
+# KEYEVENTF_SCANCODE    = 0x0008
 
-class MOUSEINPUT(ctypes.Structure):
-    _fields_ = (("dx",          wintypes.LONG),
-                ("dy",          wintypes.LONG),
-                ("mouseData",   wintypes.DWORD),
-                ("dwFlags",     wintypes.DWORD),
-                ("time",        wintypes.DWORD),
-                ("dwExtraInfo", wintypes.ULONG_PTR))
+# MAPVK_VK_TO_VSC = 0
 
-class KEYBDINPUT(ctypes.Structure):
-    _fields_ = (("wVk",         wintypes.WORD),
-                ("wScan",       wintypes.WORD),
-                ("dwFlags",     wintypes.DWORD),
-                ("time",        wintypes.DWORD),
-                ("dwExtraInfo", wintypes.ULONG_PTR))
+# # msdn.microsoft.com/en-us/library/dd375731
+# VK_TAB  = 0x09
+# VK_MENU = 0x12
 
-    def __init__(self, *args, **kwds):
-        super(KEYBDINPUT, self).__init__(*args, **kwds)
-        # some programs use the scan code even if KEYEVENTF_SCANCODE
-        # isn't set in dwFflags, so attempt to map the correct code.
-        if not self.dwFlags & KEYEVENTF_UNICODE:
-            self.wScan = user32.MapVirtualKeyExW(self.wVk,
-                                                 MAPVK_VK_TO_VSC, 0)
+# KEY_E = 0x45
+# KEY_W = 0x57
 
-class HARDWAREINPUT(ctypes.Structure):
-    _fields_ = (("uMsg",    wintypes.DWORD),
-                ("wParamL", wintypes.WORD),
-                ("wParamH", wintypes.WORD))
+# # C struct definitions
 
-class INPUT(ctypes.Structure):
-    class _INPUT(ctypes.Union):
-        _fields_ = (("ki", KEYBDINPUT),
-                    ("mi", MOUSEINPUT),
-                    ("hi", HARDWAREINPUT))
-    _anonymous_ = ("_input",)
-    _fields_ = (("type",   wintypes.DWORD),
-                ("_input", _INPUT))
+# wintypes.ULONG_PTR = wintypes.WPARAM
 
-LPINPUT = ctypes.POINTER(INPUT)
+# class MOUSEINPUT(ctypes.Structure):
+#     _fields_ = (("dx",          wintypes.LONG),
+#                 ("dy",          wintypes.LONG),
+#                 ("mouseData",   wintypes.DWORD),
+#                 ("dwFlags",     wintypes.DWORD),
+#                 ("time",        wintypes.DWORD),
+#                 ("dwExtraInfo", wintypes.ULONG_PTR))
 
-def _check_count(result, func, args):
-    if result == 0:
-        raise ctypes.WinError(ctypes.get_last_error())
-    return args
+# class KEYBDINPUT(ctypes.Structure):
+#     _fields_ = (("wVk",         wintypes.WORD),
+#                 ("wScan",       wintypes.WORD),
+#                 ("dwFlags",     wintypes.DWORD),
+#                 ("time",        wintypes.DWORD),
+#                 ("dwExtraInfo", wintypes.ULONG_PTR))
 
-user32.SendInput.errcheck = _check_count
-user32.SendInput.argtypes = (wintypes.UINT, # nInputs
-                             LPINPUT,       # pInputs
-                             ctypes.c_int)  # cbSize
+#     def __init__(self, *args, **kwds):
+#         super(KEYBDINPUT, self).__init__(*args, **kwds)
+#         # some programs use the scan code even if KEYEVENTF_SCANCODE
+#         # isn't set in dwFflags, so attempt to map the correct code.
+#         if not self.dwFlags & KEYEVENTF_UNICODE:
+#             self.wScan = user32.MapVirtualKeyExW(self.wVk,
+#                                                  MAPVK_VK_TO_VSC, 0)
+
+# class HARDWAREINPUT(ctypes.Structure):
+#     _fields_ = (("uMsg",    wintypes.DWORD),
+#                 ("wParamL", wintypes.WORD),
+#                 ("wParamH", wintypes.WORD))
+
+# class INPUT(ctypes.Structure):
+#     class _INPUT(ctypes.Union):
+#         _fields_ = (("ki", KEYBDINPUT),
+#                     ("mi", MOUSEINPUT),
+#                     ("hi", HARDWAREINPUT))
+#     _anonymous_ = ("_input",)
+#     _fields_ = (("type",   wintypes.DWORD),
+#                 ("_input", _INPUT))
+
+# LPINPUT = ctypes.POINTER(INPUT)
+
+# def _check_count(result, func, args):
+#     if result == 0:
+#         raise ctypes.WinError(ctypes.get_last_error())
+#     return args
+
+# user32.SendInput.errcheck = _check_count
+# user32.SendInput.argtypes = (wintypes.UINT, # nInputs
+#                              LPINPUT,       # pInputs
+#                              ctypes.c_int)  # cbSize
 
 
 example = \
@@ -132,9 +165,8 @@ f"""<body style="font-size:14px"><span style="color:{color_f}">log</span>(<code 
 
 <span style="color:{color_f}">isMatchesColor</span>(<code style="color:{color_v}">x: <span style="color:{color_t}">int</span>, y:<span style="color:{color_t}">int</span>, color: <span style="color:{color_t}">tuple</span>[<span style="color:{color_t}">int</span>,<span style="color:{color_t}">int</span>,<span style="color:{color_t}">int</span>], tolerance: <span style="color:{color_t}">int</span> = 0</code>) - Return <span style="color:{color_m}">True</span> if the pixel at <code style="color:{color_v}">x</code>, <code style="color:{color_v}">y</code> is matches the expected color of the <i>RGB <span style="color:{color_t}">tuple</span></i>, each color represented from 0 to 255, within an optional <code style="color:{color_v}">tolerance</code>.
 
-<span style="color:{color_f}">leftClick</span>(<code style="color:{color_v}">x: <span style="color:{color_t}">int</span>|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>, y: <span style="color:{color_t}">int</span>|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>, clicks_count: <span style="color:{color_t}">int</span> = 1, interval: <span style="color:{color_t}">float</span> = 0.0</code>) - Performs pressing a left mouse button click at given coordinates. If no arguments are passed, the button is clicked at the mouse cursor's current location.
-    The <code style="color:{color_v}">clicks_count</code> argument is an <span style="color:{color_t}">int</span> of how many clicks to make, and defaults to 1.
-    The <code style="color:{color_v}">interval</code> argument is an <span style="color:{color_t}">int</span> or <span style="color:{color_t}">float</span> of how many seconds to wait in between each click
+<span style="color:{color_f}">leftClick</span>(<code style="color:{color_v}">x: <span style="color:{color_t}">int</span>|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>, y: <span style="color:{color_t}">int</span>|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>, interval: <span style="color:{color_t}">int</span> = 10</code>) - Performs pressing a left mouse button click at given coordinates. If no arguments are passed, the button is clicked at the mouse cursor's current location.
+    <code style="color:{color_v}">interval</code> : The amount of time to wait between push and release actions in <i>milliseconds</i>. Defafults to <code style="color:{color_v}">10</code>ms
 
 <span style="color:{color_f}">rightClick</span>(<code style="color:{color_v}">x: <span style="color:{color_t}">int</span>|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>, y: <span style="color:{color_t}">int</span>|<span style="color:{color_m}">None</span> = <span style="color:{color_m}">None</span>, clicks_count: <span style="color:{color_t}">int</span> = 1, interval: <span style="color:{color_t}">float</span> = 0.0</code>) - Performs pressing a right mouse button click at given coordinates. If no arguments are passed, the button is clicked at the mouse cursor's current location.
     The <code style="color:{color_v}">clicks_count</code> argument is an <span style="color:{color_t}">int</span> of how many clicks to make, and defaults to 1.
@@ -229,6 +261,11 @@ f"""<body style="font-size:14px"><span style="color:{color_f}">log</span>(<code 
     <code style="color:{color_v}">return_center</code> : If <i><span style="color:{color_m}">True</span></i> retuns <code style="color:{color_v}"><span style="color:{color_t}">tuple</span>[x, y]</code> of the center of located image, otherwise returns <span style="color:{color_t}">tuple</span> of xy of top left of the image and width and height (<code style="color:{color_v}"><span style="color:{color_t}">tuple</span>[x, y, w, h]</code>)
     
     If image not found returns <b><code style="color:{color_v}"><span style="color:{color_t}">tuple</span>[<span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>] | <span style="color:{color_t}">tuple</span>[<span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>, <span style="color:{color_m}">None</span>]</code></b>
+
+<span style="color:{color_f}">getWindow</span>(<code style="color:{color_v}">title: <span style="color:{color_t}">str</span></code>) - Returns pygetwindow Window object with a given name
+    <code style="color:{color_v}">title</code> : Window title.
+   
+    
 <h2>Keys:</h2>{ks}
 </body>
 """

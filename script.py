@@ -1,7 +1,7 @@
 from utils import *
 
 def main():
-    cpaka = pygetwindow.getWindowsWithTitle('(CPAKA)')[0]
+    cpaka = getWindow('(CPAKA)')
     cpaka.activate()
     leftClick(cpaka.left+360, cpaka.top+80)
     
